@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#1F4E78">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="#1F4E78">
+    <title>Horario Academia Alcayna</title>
+    <link rel="manifest" href="manifest.json">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 10px;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1F4E78 0%, #2E5090 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 10px;
+            padding: 15px;
+            background: #f8f9fa;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            touch-action: manipulation;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:active {
+            transform: scale(0.95);
+            background: #5568d3;
+        }
+
+        .btn-secondary {
+            background: #e9ecef;
+            color: #495057;
+        }
+
+        .btn-secondary:active {
+            transform: scale(0.95);
+            background: #dee2e6;
+        }
+
+        .schedule-grid {
+            overflow-x: auto;
+            padding: 15px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+
+        th {
+            background: #2E5090;
+            color: white;
+            padding: 15px 10px;
+            font-size: 14px;
+            font-weight: 600;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        th:first-child {
+            background: #B4C7E7;
+            color: #1F4E78;
+        }
+
+        td {
+            border: 2px solid #dee2e6;
+            padding: 0;
+            height: 120px;
+            vertical-align: top;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        td:first-child {
+            background: #B4C7E7;
+            color: #1F4E78;
+            font-weight: bold;
+            text-align: center;
+            font-size: 16px;
+            cursor: default;
+        }
+
+        td:not(:first-child):hover {
+            box-shadow: inset 0 0 0 3px #667eea;
+        }
+
+        td:not(:first-child):active {
+            background: #f8f9fa;
+        }
+
+        .cell-content {
+            padding: 8px;
+            font-size: 11px;
+            line-height: 1.4;
+            height: 100%;
+            overflow-y: auto;
+        }
+
+        .student {
+            margin-bottom: 8px;
+            padding: 6px;
+            border-radius: 6px;
+            background: rgba(255,255,255,0.5);
+        }
+
+        .student:last-child {
+            margin-bottom: 0;
+        }
+
+        .student-name {
+            font-weight: 700;
+            color: #1F4E78;
+            margin-bottom: 3px;
+            font-size: 13px;
+        }
+
+        .student-subject {
+            color: #dc3545;
+            font-weight: 600;
+            font-size: 12px;
+        }
+
+        .student-course {
+            color: #6c757d;
+            font-size: 10px;
+        }
+
+        .empty-cell {
+            color: #adb5bd;
+            font-style: italic;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+        }
+
+        /* Color classes */
+        .color-eso1-2 { background: #E2EFDA !important; }
+        .color-eso3-4 { background: #FCE4D6 !important; }
+        .color-bach { background: #DDEBF7 !important; }
+        .color-matematicas { background: #FFF2CC !important; }
+        .color-fisica { background: #E7E6FF !important; }
+        .color-quimica { background: #D5F4E6 !important; }
+        .color-ciencias { background: #E7E6FF !important; }
+        .color-lenguas { background: #FFE6F0 !important; }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            animation: fadeIn 0.3s;
+        }
+
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            width: 100%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: slideUp 0.3s;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .modal-header h2 {
+            color: #1F4E78;
+            font-size: 20px;
+        }
+
+        .close-btn {
+            background: #e9ecef;
+            border: none;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .close-btn:active {
+            background: #dee2e6;
+            transform: scale(0.9);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .student-form {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+
+        .student-form h3 {
+            color: #1F4E78;
+            font-size: 16px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .color-selector {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 8px;
+        }
+
+        .color-option {
+            padding: 12px;
+            border: 3px solid transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: center;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .color-option:active {
+            transform: scale(0.95);
+        }
+
+        .color-option.selected {
+            border-color: #1F4E78;
+            box-shadow: 0 0 0 2px white, 0 0 0 4px #1F4E78;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 25px;
+        }
+
+        .modal-actions .btn {
+            flex: 1;
+            padding: 14px;
+            font-size: 16px;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-danger:active {
+            background: #c82333;
+        }
+
+        .legend {
+            padding: 15px;
+            background: #f8f9fa;
+            border-top: 2px solid #dee2e6;
+        }
+
+        .legend h3 {
+            color: #1F4E78;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+
+        .legend-items {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+        }
+
+        .legend-color {
+            width: 30px;
+            height: 30px;
+            border-radius: 6px;
+            border: 2px solid #dee2e6;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 { font-size: 20px; }
+            th, td { font-size: 12px; }
+            .cell-content { font-size: 10px; padding: 6px; }
+            td { height: 100px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📚 Horario Academia Alcayna</h1>
+            <p>Lunes a Viernes | 16:00 - 21:00</p>
+        </div>
+
+        <div class="toolbar">
+            <button class="btn btn-primary" onclick="exportData()">💾 Exportar Datos</button>
+            <button class="btn btn-secondary" onclick="importData()">📥 Importar Datos</button>
+            <button class="btn btn-secondary" onclick="clearAll()">🗑️ Limpiar Todo</button>
+        </div>
+
+        <div class="schedule-grid">
+            <table id="scheduleTable">
+                <thead>
+                    <tr>
+                        <th>HORA</th>
+                        <th>LUNES</th>
+                        <th>MARTES</th>
+                        <th>MIÉRCOLES</th>
+                        <th>JUEVES</th>
+                        <th>VIERNES</th>
+                    </tr>
+                </thead>
+                <tbody id="scheduleBody">
+                </tbody>
+            </table>
+        </div>
+
+        <div class="legend">
+            <h3>🎨 Código de Colores por Asignatura</h3>
+            <div class="legend-items">
+                <div class="legend-item">
+                    <div class="legend-color color-matematicas"></div>
+                    <span>Matemáticas</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color color-fisica"></div>
+                    <span>Física</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color color-quimica"></div>
+                    <span>Química</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal" id="editModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Editar Clase</h2>
+                <button class="close-btn" onclick="closeModal()">×</button>
+            </div>
+
+            <div id="studentsContainer"></div>
+
+            <div class="form-group">
+                <label>Color de fondo</label>
+                <div class="color-selector">
+                    <div class="color-option color-matematicas" data-color="matematicas" onclick="selectColor('matematicas')">Matemáticas</div>
+                    <div class="color-option color-fisica" data-color="fisica" onclick="selectColor('fisica')">Física</div>
+                    <div class="color-option color-quimica" data-color="quimica" onclick="selectColor('quimica')">Química</div>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn btn-danger" onclick="clearCell()">Limpiar</button>
+                <button class="btn btn-primary" onclick="saveCell()">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const hours = ['16:00', '17:00', '18:00', '19:00', '20:00'];
+        const days = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes'];
+        let scheduleData = {};
+        let currentCell = null;
+        let selectedColor = '';
+
+        // Initialize
+        function init() {
+            loadData();
+            renderSchedule();
+            registerServiceWorker();
+        }
+
+        // Render schedule
+        function renderSchedule() {
+            const tbody = document.getElementById('scheduleBody');
+            tbody.innerHTML = '';
+
+            hours.forEach(hour => {
+                const tr = document.createElement('tr');
+                
+                // Hour cell
+                const thHour = document.createElement('td');
+                thHour.textContent = hour;
+                tr.appendChild(thHour);
+
+                // Day cells
+                days.forEach(day => {
+                    const td = document.createElement('td');
+                    const key = `${hour}-${day}`;
+                    const cellData = scheduleData[key] || { students: [], color: '' };
+                    
+                    if (cellData.color) {
+                        td.classList.add(`color-${cellData.color}`);
+                    }
+
+                    const content = document.createElement('div');
+                    content.className = 'cell-content';
+
+                    if (cellData.students.length > 0) {
+                        cellData.students.forEach((student, idx) => {
+                            if (student.name) {
+                                const studentDiv = document.createElement('div');
+                                studentDiv.className = 'student';
+                                studentDiv.innerHTML = `
+                                    <div class="student-name">${idx + 1}. ${student.name}</div>
+                                    <div class="student-subject">${student.subject}</div>
+                                    <div class="student-course">${student.course}</div>
+                                `;
+                                content.appendChild(studentDiv);
+                            }
+                        });
+                    } else {
+                        content.innerHTML = '<div class="empty-cell">Toca para añadir</div>';
+                    }
+
+                    td.appendChild(content);
+                    td.onclick = () => openModal(hour, day);
+                    tr.appendChild(td);
+                });
+
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Open modal
+        function openModal(hour, day) {
+            currentCell = `${hour}-${day}`;
+            const cellData = scheduleData[currentCell] || { students: [{}, {}, {}], color: '' };
+            
+            document.getElementById('modalTitle').textContent = `${translateDay(day)} - ${hour}`;
+            
+            const container = document.getElementById('studentsContainer');
+            container.innerHTML = '';
+
+            for (let i = 0; i < 3; i++) {
+                const student = cellData.students[i] || {};
+                const formHtml = `
+                    <div class="student-form">
+                        <h3>${['1️⃣', '2️⃣', '3️⃣'][i]} Alumno ${i + 1}</h3>
+                        <div class="form-group">
+                            <label>Nombre del alumno</label>
+                            <input type="text" id="name${i}" value="${student.name || ''}" placeholder="Nombre completo">
+                        </div>
+                        <div class="form-group">
+                            <label>Asignatura</label>
+                            <select id="subject${i}">
+                                <option value="">Seleccionar asignatura</option>
+                                <option value="Matemáticas" ${student.subject === 'Matemáticas' ? 'selected' : ''}>Matemáticas</option>
+                                <option value="Física" ${student.subject === 'Física' ? 'selected' : ''}>Física</option>
+                                <option value="Química" ${student.subject === 'Química' ? 'selected' : ''}>Química</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Curso</label>
+                            <select id="course${i}">
+                                <option value="">Seleccionar curso</option>
+                                <option value="1º ESO" ${student.course === '1º ESO' ? 'selected' : ''}>1º ESO</option>
+                                <option value="2º ESO" ${student.course === '2º ESO' ? 'selected' : ''}>2º ESO</option>
+                                <option value="3º ESO" ${student.course === '3º ESO' ? 'selected' : ''}>3º ESO</option>
+                                <option value="4º ESO" ${student.course === '4º ESO' ? 'selected' : ''}>4º ESO</option>
+                                <option value="1º Bach" ${student.course === '1º Bach' ? 'selected' : ''}>1º Bachillerato</option>
+                                <option value="2º Bach" ${student.course === '2º Bach' ? 'selected' : ''}>2º Bachillerato</option>
+                            </select>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += formHtml;
+            }
+
+            selectedColor = cellData.color;
+            updateColorSelection();
+
+            document.getElementById('editModal').classList.add('active');
+        }
+
+        // Close modal
+        function closeModal() {
+            document.getElementById('editModal').classList.remove('active');
+        }
+
+        // Select color
+        function selectColor(color) {
+            selectedColor = selectedColor === color ? '' : color;
+            updateColorSelection();
+        }
+
+        function updateColorSelection() {
+            document.querySelectorAll('.color-option').forEach(opt => {
+                opt.classList.remove('selected');
+                if (opt.dataset.color === selectedColor) {
+                    opt.classList.add('selected');
+                }
+            });
+        }
+
+        // Save cell
+        function saveCell() {
+            const students = [];
+            for (let i = 0; i < 3; i++) {
+                const name = document.getElementById(`name${i}`).value.trim();
+                const subject = document.getElementById(`subject${i}`).value.trim();
+                const course = document.getElementById(`course${i}`).value;
+
+                students.push({ name, subject, course });
+            }
+
+            scheduleData[currentCell] = {
+                students: students,
+                color: selectedColor
+            };
+
+            saveData();
+            renderSchedule();
+            closeModal();
+        }
+
+        // Clear cell
+        function clearCell() {
+            if (confirm('¿Borrar toda la información de esta clase?')) {
+                delete scheduleData[currentCell];
+                saveData();
+                renderSchedule();
+                closeModal();
+            }
+        }
+
+        // Storage functions
+        function saveData() {
+            localStorage.setItem('horarioAcademia', JSON.stringify(scheduleData));
+        }
+
+        function loadData() {
+            const saved = localStorage.getItem('horarioAcademia');
+            if (saved) {
+                scheduleData = JSON.parse(saved);
+            }
+        }
+
+        // Export/Import
+        function exportData() {
+            const dataStr = JSON.stringify(scheduleData, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `horario-${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function importData() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            input.onchange = (e) => {
+                const file = e.target.files[0];
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    try {
+                        scheduleData = JSON.parse(event.target.result);
+                        saveData();
+                        renderSchedule();
+                        alert('Datos importados correctamente');
+                    } catch (err) {
+                        alert('Error al importar el archivo');
+                    }
+                };
+                reader.readAsText(file);
+            };
+            input.click();
+        }
+
+        function clearAll() {
+            if (confirm('¿Estás segura de que quieres borrar todo el horario?')) {
+                scheduleData = {};
+                saveData();
+                renderSchedule();
+            }
+        }
+
+        function translateDay(day) {
+            const translations = {
+                'lunes': 'Lunes',
+                'martes': 'Martes',
+                'miercoles': 'Miércoles',
+                'jueves': 'Jueves',
+                'viernes': 'Viernes'
+            };
+            return translations[day];
+        }
+
+        // Service Worker
+        function registerServiceWorker() {
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('sw.js').catch(() => {});
+            }
+        }
+
+        // Initialize app
+        init();
+    </script>
+</body>
+</html>
